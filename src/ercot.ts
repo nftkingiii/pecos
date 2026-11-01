@@ -84,12 +84,12 @@ export function createErcot(credentials: Credentials, http: typeof fetch = fetch
       const delivery = toDeliveryInterval(start);
       const hour = String(delivery.deliveryHour);
       const interval = String(delivery.deliveryInterval);
-      const hourEnding = `${hour.padStart(2, "0")}:00`;
-      const path = market === "real-time" ? "np6-905-cd/spp_node_zone_hub" : "np4-190-cd/dam_stlmnt_pnt_prices";
-      const window: Record<string, string> =
-        market === "real-time"
-          ? { deliveryHourFrom: hour, deliveryHourTo: hour, deliveryIntervalFrom: interval, deliveryIntervalTo: interval }
-          : { hourEndingFrom: hourEnding, hourEndingTo: hourEnding };
+      const realTime = market === "real-time";
+      const path = realTime ? "np6-905-cd/spp_node_zone_hub" : "np4-190-cd/dam_stlmnt_pnt_prices";
+      // The day-ahead report has no hour filter, so its row is picked out below.
+      const window: Record<string, string> = realTime
+        ? { deliveryHourFrom: hour, deliveryHourTo: hour, deliveryIntervalFrom: interval, deliveryIntervalTo: interval }
+        : {};
 
       const body = await report(path, {
         deliveryDateFrom: delivery.deliveryDate,
@@ -97,8 +97,12 @@ export function createErcot(credentials: Credentials, http: typeof fetch = fetch
         settlementPoint,
         ...window,
       });
-      const column = (body.fields ?? []).findIndex((f) => f.name === "settlementPointPrice");
-      const row = body.data?.[0];
+      const names = (body.fields ?? []).map((f) => f.name);
+      const column = names.indexOf("settlementPointPrice");
+      const hourEnding = `${hour.padStart(2, "0")}:00`;
+      const row = realTime
+        ? body.data?.[0]
+        : body.data?.find((r) => r[names.indexOf("hourEnding")] === hourEnding);
       if (column < 0 || !row) return null;
       const lmpUsdPerMwh = Number(row[column]);
       if (!Number.isFinite(lmpUsdPerMwh)) return null;

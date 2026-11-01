@@ -1,0 +1,84 @@
+version: "1"
+kind: miner
+id: 7310042
+slug: pecos-ercot
+protocol: generic
+name: Pecos ERCOT Power Prices
+description: >
+  ERCOT (Texas) wholesale electricity settlement point prices, read live from ERCOT's Public API.
+  Real-time 15-minute and day-ahead hourly prices for hubs and load zones such as HB_WEST and LZ_WEST.
+  Answers only the exact interval asked for, and never substitutes another one.
+base_url: https://pecos.up.railway.app
+
+rate_limit_per_sec: 1
+cache_ttl_sec: 60
+circuit_threshold: 5
+circuit_cooldown_seconds: 30
+
+docs:
+  website: https://pecos.up.railway.app/health
+
+limitations:
+  - code: ERCOT_ONLY
+    message: Serves ERCOT hubs and load zones only, for example HB_WEST, HB_NORTH, HB_HOUSTON, HB_SOUTH, LZ_WEST.
+  - code: PUBLICATION_DELAY
+    message: A real-time interval is available shortly after it ends. Earlier requests get 404 interval_not_published.
+
+endpoints:
+  - path: /price
+    external_path: /price
+    method: GET
+    description: >
+      GRID_POWER_PRICE for ERCOT. Answers "what was the ERCOT West hub price at 21:15 UTC" and
+      "what is the day-ahead price for LZ_WEST at this hour". Returns lmp_usd_per_mwh, node_or_zone,
+      market, interval_start and currency.
+    intents: [GRID_POWER_PRICE_GENERAL]
+    params:
+      query:
+        required:
+          - name: node_or_zone
+            type: string
+            intents: ["*"]
+            description: "ERCOT settlement point: HB_BUSAVG, HB_HOUSTON, HB_HUBAVG, HB_NORTH, HB_PAN, HB_SOUTH, HB_WEST, LZ_AEN, LZ_CPS, LZ_HOUSTON, LZ_LCRA, LZ_NORTH, LZ_RAYBN, LZ_SOUTH or LZ_WEST."
+          - name: interval_start
+            type: string
+            intents: ["*"]
+            description: "Start of the settlement interval as an RFC 3339 time with a timezone, for example 2026-10-31T21:15:00Z."
+        optional:
+          - name: market
+            type: string
+            intents: ["*"]
+            description: "real-time (default) or day-ahead."
+
+input_schema:
+  type: object
+  required: [node_or_zone, interval_start]
+  properties:
+    node_or_zone:
+      type: string
+      description: ERCOT hub or load zone, for example HB_WEST.
+    interval_start:
+      type: string
+      description: Start of the settlement interval, RFC 3339 with a timezone.
+    market:
+      type: string
+      description: real-time or day-ahead.
+
+semantics:
+  signal_mapping:
+    label_field: node_or_zone
+  supported_intents:
+    - GRID_POWER_PRICE_GENERAL
+
+intent_mapping:
+  GRID_POWER_PRICE_GENERAL:
+    endpoint: /price
+    input:
+      node_or_zone: { from: node_or_zone, how: "ERCOT settlement point name in upper case, for example HB_WEST." }
+      interval_start: { from: interval_start }
+    output:
+      lmp_usd_per_mwh: { path: lmp_usd_per_mwh }
+      node_or_zone: { path: node_or_zone }
+      market: { path: market }
+      interval_start: { path: interval_start }
+      currency: { path: currency }
