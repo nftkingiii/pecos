@@ -8,7 +8,7 @@ description: >
   ERCOT (Texas) wholesale electricity settlement point prices, read live from ERCOT's Public API.
   Real-time 15-minute and day-ahead hourly prices for hubs and load zones such as HB_WEST and LZ_WEST.
   Answers only the exact interval asked for, and never substitutes another one.
-base_url: https://pecos.up.railway.app
+base_url: https://pecos-app.up.railway.app
 
 rate_limit_per_sec: 1
 cache_ttl_sec: 60
@@ -16,7 +16,7 @@ circuit_threshold: 5
 circuit_cooldown_seconds: 30
 
 docs:
-  website: https://pecos.up.railway.app/health
+  website: https://pecos-app.up.railway.app/health
 
 limitations:
   - code: ERCOT_ONLY
