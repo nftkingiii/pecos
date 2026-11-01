@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { createHandler } from "./app.ts";
 import { createErcot } from "./ercot.ts";
@@ -10,6 +11,9 @@ if (!ERCOT_USERNAME || !ERCOT_PASSWORD || !ERCOT_SUBSCRIPTION_KEY) {
 const handle = createHandler(
   createErcot({ username: ERCOT_USERNAME, password: ERCOT_PASSWORD, subscriptionKey: ERCOT_SUBSCRIPTION_KEY }),
 );
+
+/** Telegraph nodes fetch this and check it against the hash registered on-chain. */
+const minerYaml = readFileSync(new URL("../pecos.yaml", import.meta.url));
 
 const LIMIT_PER_MINUTE = 30;
 const hits = new Map<string, { count: number; reset: number }>();
@@ -33,6 +37,10 @@ const server = createServer(async (req, res) => {
   };
   if (req.method !== "GET") return send(405, { error: "method_not_allowed" });
   if (url.pathname === "/health") return send(200, { status: "ok" });
+  if (url.pathname === "/pecos.yaml") {
+    res.writeHead(200, { "content-type": "application/yaml" });
+    return res.end(minerYaml);
+  }
   if (url.pathname !== "/price") return send(404, { error: "not_found" });
 
   const forwarded = req.headers["x-real-ip"];
