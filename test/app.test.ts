@@ -108,6 +108,22 @@ test("picks the exact day-ahead hour, and refuses a missing one", async () => {
   assert.equal(await ercot.price("HB_WEST", "day-ahead", new Date("2026-11-01T03:00:00Z")), null);
 });
 
+test("prefers a load zone's LZ price over its energy-weighted LZEW row", async () => {
+  const http = (async (url: string) => {
+    if (String(url).includes("b2clogin")) return new Response(JSON.stringify({ id_token: "t" }));
+    return new Response(
+      JSON.stringify({
+        fields: [{ name: "settlementPointName" }, { name: "settlementPointType" }, { name: "settlementPointPrice" }],
+        data: [["LZ_WEST", "LZEW", 15.4], ["LZ_WEST", "LZ", 15.35]],
+      }),
+    );
+  }) as typeof fetch;
+  let clock = 1_000_000;
+  const ercot = createErcot({ username: "u", password: "p", subscriptionKey: "k" }, http, () => (clock += 3_000));
+  const found = await ercot.price("LZ_WEST", "real-time", new Date("2026-11-05T09:00:00Z"));
+  assert.equal(found?.lmpUsdPerMwh, 15.35);
+});
+
 test("reuses the login token between requests", async () => {
   let logins = 0;
   const http = (async (url: string) => {

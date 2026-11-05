@@ -100,9 +100,11 @@ export function createErcot(credentials: Credentials, http: typeof fetch = fetch
       const names = (body.fields ?? []).map((f) => f.name);
       const column = names.indexOf("settlementPointPrice");
       const hourEnding = `${hour.padStart(2, "0")}:00`;
-      const row = realTime
-        ? body.data?.[0]
-        : body.data?.find((r) => r[names.indexOf("hourEnding")] === hourEnding);
+      // Load zones are published twice: `LZ` is the zone's settlement point price, `LZEW` its energy-weighted variant.
+      const typeColumn = names.indexOf("settlementPointType");
+      const rank = (r: unknown[]) => (typeColumn >= 0 && r[typeColumn] === "LZEW" ? 1 : 0);
+      const rows = [...(body.data ?? [])].sort((a, b) => rank(a) - rank(b));
+      const row = realTime ? rows[0] : rows.find((r) => r[names.indexOf("hourEnding")] === hourEnding);
       if (column < 0 || !row) return null;
       const lmpUsdPerMwh = Number(row[column]);
       if (!Number.isFinite(lmpUsdPerMwh)) return null;
