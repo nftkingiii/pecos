@@ -79,8 +79,16 @@ ERCOT_USERNAME=... ERCOT_PASSWORD=... ERCOT_SUBSCRIPTION_KEY=... npm start   # h
 
 Pecos logs in once per 50 minutes (ERCOT ID tokens last an hour), keeps to ERCOT's 30 requests a minute, caches each interval for 60 seconds, and rate-limits callers to 30 requests a minute per IP.
 
+## CAISO day-ahead
+
+A CAISO node (for example `TH_NP15_GEN-APND`, `TH_SP15_GEN-APND`, `TH_ZP26_GEN-APND`, `DLAP_PGAE-APND`, or any node CAISO OASIS has data for) is answered from CAISO OASIS `PRC_LMP` day-ahead results, with the same fields as an ERCOT answer plus `source`, `delivery_hour_start`, `delivery_hour_end` and `lmp_components_usd_per_mwh`. `market` defaults to `day-ahead` for these nodes and `real-time` is refused with a 400. An hour OASIS has not published is a 404, an unknown node a 400, and an OASIS failure a 503. It is a single source (`verification: single_source`), but each price is checked against its energy, congestion, loss and GHG components. Only the OASIS rate limit (one request per five seconds) applies, so the first answer for a node and UTC day can take a few seconds and the rest of that day is served from cache.
+
+## Logs
+
+Every request writes one line to stdout: `req {"ts":...,"route":...,"query":{...},"status":...,"error":...,"ms":...,"ip":...}`. Query values are cut to 200 characters; headers and bodies are never logged. Search for `req ` in the deploy logs.
+
 ## Limits
 
-- ERCOT only. Other grids are served by other Telegraph providers.
+- ERCOT and, for day-ahead prices, CAISO. Other grids are served by other Telegraph providers.
 - `GRID_POWER_PRICE_GENERAL` has no truth sources in its evaluation pool yet, so it isn't ranked. Pecos is listed and callable, but auto-routing may not pick it until ranking exists. Work on that is tracked in [bounties#92](https://github.com/telegraphprotocol/bounties/issues/92).
 - Testnet only: payments are test USDC on Ethereum Sepolia.
