@@ -90,5 +90,5 @@ Every request writes one line to stdout: `req {"ts":...,"route":...,"query":{...
 ## Limits
 
 - ERCOT and, for day-ahead prices, CAISO. Other grids are served by other Telegraph providers.
-- `GRID_POWER_PRICE_GENERAL` has no truth sources in its evaluation pool yet, so it isn't ranked. Pecos is listed and callable, but auto-routing may not pick it until ranking exists. Work on that is tracked in [bounties#92](https://github.com/telegraphprotocol/bounties/issues/92).
+- `GRID_POWER_PRICE_GENERAL` is now ranked: on 2026-11-27 its evaluation pool held 235 eligible rows from 7 submitters (we contributed ERCOT, CAISO, MISO and NYISO truth sources through Assize, tracked in [bounties#92](https://github.com/telegraphprotocol/bounties/issues/92); disclosed because we also run this miner). Pecos's score moves between epochs: 0 at epoch 45, rank 1 at 0.5 at epoch 57, 0 at epochs 62 and 64. Each epoch samples few questions, and most of the pool is outside ERCOT.
 - Testnet only: payments are test USDC on Ethereum Sepolia.
