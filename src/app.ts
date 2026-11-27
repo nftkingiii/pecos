@@ -77,15 +77,18 @@ export function createHandler(ercot: Ercot, now = () => Date.now(), caiso?: Cais
         },
       };
     }
-    const market = (query.get("market") ?? "real-time").toLowerCase() as Market;
-    if (market !== "real-time" && market !== "day-ahead") {
-      return { status: 400, body: { error: "unknown_market", supported: ["real-time", "day-ahead"] } };
-    }
     const rawStart = query.get("interval_start");
     if (!rawStart) return { status: 400, body: { error: "interval_start_required" } };
     const start = parseInstant(rawStart);
     if (!start) {
       return { status: 400, body: { error: "interval_start_needs_a_timezone", example: "2026-10-31T21:15:00Z" } };
+    }
+    // With no market named, an hour-aligned time is read as the hourly day-ahead price (the family's reference
+    // quantity, and what CAISO answers too); a 15-minute time can only be a real-time interval.
+    const onTheHour = start.getUTCMinutes() === 0 && start.getUTCSeconds() === 0;
+    const market = (query.get("market") ?? (onTheHour ? "day-ahead" : "real-time")).toLowerCase() as Market;
+    if (market !== "real-time" && market !== "day-ahead") {
+      return { status: 400, body: { error: "unknown_market", supported: ["real-time", "day-ahead"] } };
     }
 
     const key = `${point}|${market}|${start.toISOString()}`;

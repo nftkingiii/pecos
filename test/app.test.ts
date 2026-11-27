@@ -140,3 +140,13 @@ test("reuses the login token between requests", async () => {
   await ercot.price("HB_WEST", "real-time", start);
   assert.equal(logins, 1);
 });
+
+test("with no market named, an on-the-hour time is the day-ahead price and a 15-minute time is real-time", async () => {
+  const hour = await createHandler(priced)(query({ node_or_zone: "HB_NORTH", interval_start: "2026-01-18T08:00:00-06:00" }));
+  assert.equal(hour.status, 200);
+  assert.equal(hour.body.market, "day-ahead");
+  const quarter = await createHandler(priced)(query({ node_or_zone: "HB_NORTH", interval_start: "2026-01-18T08:15:00-06:00" }));
+  assert.equal(quarter.body.market, "real-time");
+  const named = await createHandler(priced)(query({ node_or_zone: "HB_NORTH", interval_start: "2026-01-18T08:00:00-06:00", market: "real-time" }));
+  assert.equal(named.body.market, "real-time");
+});

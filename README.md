@@ -54,7 +54,7 @@ curl "https://pecos-app.up.railway.app/price?node_or_zone=HB_WEST&market=day-ahe
 |---|---|
 | `node_or_zone` | `HB_BUSAVG`, `HB_HOUSTON`, `HB_HUBAVG`, `HB_NORTH`, `HB_PAN`, `HB_SOUTH`, `HB_WEST`, `LZ_AEN`, `LZ_CPS`, `LZ_HOUSTON`, `LZ_LCRA`, `LZ_NORTH`, `LZ_RAYBN`, `LZ_SOUTH`, `LZ_WEST` |
 | `interval_start` | An RFC 3339 time with a timezone. Real-time intervals are 15 minutes; day-ahead intervals are hourly |
-| `market` | `real-time` (default) or `day-ahead` |
+| `market` | `real-time` or `day-ahead`. If omitted: day-ahead for an on-the-hour time, real-time otherwise. The answer always states which market it used |
 
 Failures are explicit:
 
